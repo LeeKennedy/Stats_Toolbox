@@ -4,11 +4,11 @@ psd <- read.csv("pooledsd.csv", as.is=TRUE, header=TRUE)
 library(reshape2)
 library(dplyr)
 
-
+# Create long-form data -------------------------------------------
 psd <- na.omit(stack(psd))
 
 psd1 <- select(psd, everything())%>%
-      group_by(ind)%>%
+      group_by(ind)%>% # ind = column label resulting from stack
       summarise(mean = mean(values), sd = sd(values), n()-1)
 
 colnames(psd1)[4] <- "df"
