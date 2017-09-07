@@ -1,0 +1,116 @@
+---
+title: "Examples of the use of Sapply"
+output: html_notebook
+---
+
+The sapply() function applies a function to individual values of a dataframe, and simplifies the output.
+
+Structure of the sapply() function: sapply(data, function, ...)
+
+The data used in this example is
+
+```{r}
+
+dataset1 <- data.frame(observation_A = 16:8, observation_B = c(20:19, 6:12))
+
+dataset1
+```
+
+###Exercise 1###
+
+Using sapply(), find the length of dataset1‘s observations:
+
+```{r}
+sapply(dataset1, length)
+
+```
+
+
+###Exercise 2###
+
+Using sapply(), find the sums of dataset1‘s observations:
+
+```{r}
+sapply(dataset1, sum)
+```
+
+
+###Exercise 3###
+
+Use sapply() to find the quantiles of dataset1‘s columns:
+
+```{r}
+sapply(dataset1, quantile)
+```
+
+
+###Exercise 4###
+
+Find the classes of dataset1‘s columns:
+
+```{r}
+sapply(dataset1, class)
+
+```
+
+
+###Exercise 5###
+
+Required function:
+
+```{r}
+DerivativeFunction <- function(x) { log10(x) + 1 }
+```
+
+Apply the “DerivativeFunction” to dataset1, with simplified output:
+
+```{r}
+sapply(dataset1, DerivativeFunction)
+```
+
+
+###Exercise 6###
+
+Script the “DerivativeFunction” within sapply(). The data is dataset1:
+
+```{r}
+sapply(dataset1, function(x) log10(x) + 1)
+```
+
+
+###Exercise 7###
+
+Find the range of dataset1:
+
+```{r}
+sapply(dataset1, range)
+```
+
+
+###Exercise 8###
+
+Print dataset1 with the sapply() function:
+
+```{r}
+sapply(dataset1, print)
+```
+
+
+###Exercise 9###
+
+Find the mean of dataset1‘s observations:
+
+```{r}
+sapply(dataset1, mean)
+```
+
+
+###Exercise 10###
+
+Use sapply() to inspect dataset1 for numeric values:
+
+```{r}
+sapply(dataset1, is.numeric)
+```
+
+

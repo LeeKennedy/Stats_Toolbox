@@ -1,0 +1,355 @@
+---
+title: "ANOVA"
+output: html_notebook
+---
+
+##Purpose##
+ANOVA is used to compare multiple means to see if there are any differences.  Are they equal or not?
+
+##Theory##
+ANOVA is used to compare differences of means among more than 2 groups. It does this by looking at variation in the data and where that variation is found (hence its name). Specifically, ANOVA compares the amount of variation between groups with the amount of variation within groups. It can be used for both observational and experimental studies.
+
+When we take samples from a population, we expect each sample mean to differ simply because we are taking a sample rather than measuring the whole population; this is called sampling error but is often referred to more informally as the effects of “chance”. Thus, we always expect there to be some differences in means among different groups. The question is: is the difference among groups greater than that expected to be caused by chance? 
+
+Like other classical statistical tests, we use ANOVA to calculate a test statistic (the F-ratio) with which we can obtain the probability (the P-value) of obtaining the data assuming the null hypothesis. A significant P-value (usually taken as P<0.05) suggests that at least one group mean is significantly different from the others.
+
+Null hypothesis: all population means are equal
+
+Alternative hypothesis: at least one population mean is different from the rest.
+
+###How does ANOVA relate to the t-test?###
+t-test is used when comparing two groups while ANOVA is used for comparing more than 2 groups. In fact, if you calculate the p-value using ANOVA for 2 groups, you will get the same results as the t-test.
+
+##Assumptions##
+1. The dependent variable is continuous.
+
+2. The independent variable is categorical with or more categories.
+
+3. The dependent and independent variables have values for each row of data. (?)
+
+4. Observations in each group are independent.
+
+5. The dependent variable is approximately normally distributed in each group.
+
+6. There is approximate equality of variance in all the groups.
+
+7. We should not have any outliers
+
+
+###Packages Used###
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(psych)
+library(car)
+library(readxl)
+library(pwr)
+```
+
+##Demonstration Data##
+```{r}
+cancer.survival <- read.csv("/Users/Study Old/Desktop/Statistics Notebooks/data/cancer-survival.csv", as.is = TRUE, header = TRUE)
+```
+
+###Plot the data###
+Data should always be visually examined.
+
+```{r}
+cs_plot <- ggplot(cancer.survival, aes(x = Organ, y = Survival)) + 
+        geom_boxplot() +
+        stat_summary(fun.y = mean, geom = "point", shape = 23, size = 4) +
+        ggtitle("Survival time of patients affected by different cancers")
+cs_plot
+```
+
+
+##Testing Assumptions##
+###Normality, using Shapiro-Wilk Test###
+The null-hypothesis of this test is that the population is normally distributed. Thus, if the p-value is less than the chosen alpha level, then the null hypothesis is rejected and there is evidence that the data tested are not from a normally distributed population; in other words, the data are not normal. On the contrary, if the p-value is greater than the chosen alpha level, then the null hypothesis that the data came from a normally distributed population cannot be rejected (e.g., for an alpha level of 0.05, a data set with a p-value of 0.02 rejects the null hypothesis that the data are from a normally distributed population).[2] However, since the test is biased by sample size,[3] the test may be statistically significant from a normal distribution in any large samples. Thus a Q–Q plot is required for verification in addition to the test.
+
+```{r}
+with(cancer.survival, tapply(Survival, Organ, shapiro.test))
+```
+
+###Q-Q Plot###
+Q-Q plots take your sample data, sort it in ascending order, and then plot them versus quantiles calculated from a theoretical distribution. If both sets of quantiles came from the same distribution, we should see the points forming a line that’s roughly straight. 
+
+```{r}
+qqnorm(cancer.survival$Survival)
+```
+###Equality of Variance, using Levene's Test###
+In statistics, Levene's test is an inferential statistic used to assess the equality of variances for a variable calculated for two or more groups.[1] Some common statistical procedures assume that variances of the populations from which different samples are drawn are equal. Levene's test assesses this assumption. It tests the null hypothesis that the population variances are equal (called homogeneity of variance or homoscedasticity). If the resulting p-value of Levene's test is less than some significance level (typically 0.05), the obtained differences in sample variances are unlikely to have occurred based on random sampling from a population with equal variances. Thus, the null hypothesis of equal variances is rejected and it is concluded that there is a difference between the variances in the population.
+
+```{r, warning=FALSE}
+leveneTest(Survival~Organ, data = cancer.survival)
+```
+##Stop and Reassess##
+Neither necessary conditions, normality and equal variance is being met.  At this point you should stop and assess what to do.  Transforming data is an option.
+
+###Transform Data###
+The boxplot and the Q-Q plot indicates that the relationship is not a normal distribution and so a log transformation is tried:
+
+```{r, warning=FALSE}
+cancer.survival$log.survival <- log(cancer.survival$Survival)
+
+with(cancer.survival, tapply(log.survival, Organ, shapiro.test))
+
+leveneTest(log.survival~Organ, data = cancer.survival)
+
+```
+
+Following the transformation, the data appears to be better structured.  This is born out in the boxplot and Q-Q plot:
+
+```{r}
+# Diamonds = means (Shape 24)
+
+cs_plot <- ggplot(cancer.survival, aes(x = Organ, y = log.survival)) + 
+        geom_boxplot() +
+        stat_summary(fun.y = mean, geom = "point", shape = 23, size = 4) +
+        ggtitle("Survival time of patients affected by different cancers")
+cs_plot
+```
+
+
+```{r}
+qqnorm(cancer.survival$log.survival)
+```
+
+##Perform the ANOVA Test##
+```{r}
+aov1 <- aov(log.survival~Organ, cancer.survival)
+summary(aov1)
+```
+The p-value of 0.00412 indicates the Null Hypothesis, Ho, that the means are all the same, is rejected.  A Tukey HSD test will assess which one are different.
+
+##Perform the Tukey HSD Comparison##
+Tukey's HSD (honest significant difference) test is a single-step multiple comparison procedure and statistical test. It can be used on raw data or in conjunction with an ANOVA (Post-hoc analysis) to find means that are significantly different from each other. 
+
+Tukey's test compares the means of every treatment to the means of every other treatment; that is, it applies simultaneously to the set of all pairwise comparisons  and identifies any difference between two means that is greater than the expected standard error. 
+
+```{r}
+TukeyHSD(aov1)
+```
+From the above results, there is a significant difference between bronchus and breast and stomach and breast.  This can be seen in the boxplot.
+
+##Interpretation##
+
+* The data showed departure from normality and equality of variance. 
+* Perhaps unequal variance was due to our unbalanced design (we had unequal samples in our groups)
+* A log transformation was useful in stabilizing variance.
+* Normality was violated in the breast group even after transformation. 
+* ANOVA is robust to slight deviations from normality
+* Differences between groups were statistically significant
+
+##Laboratory Application - Validations##
+ANOVA looks at the differences between groups and within groups and so it can be used to look at variance within a batch run and between batch runs.  This is the repeatability and reproducibility from a validation trial.  In this example we have a sample tested six times in the first batch and three times in five subsequent batches.  The data is artificial and used sdr = 2 and sdR = 5 in it's construction.
+
+**NOTE:** We are looking for something slightly different here to the regular ANOVA test.  ANOVA looks at data to see if there are differences in the means.  In validation trials we expect differences and want to use the ANOVA process to extract some measure of it.
+
+###Data###
+
+```{r}
+val_data <- read_excel("/Users/Study Old/Desktop/Statistics Notebooks/data/Validation.xlsx")
+round(val_data,2)
+```
+
+```{r}
+val_data2 <- na.omit(stack(val_data))
+```
+Used *na.omit* to remove NAs from data. *Stack* converts from wide to long format.
+
+###Boxplot###
+It always pays to view your data:
+
+```{r}
+val_plot <- ggplot(val_data2, aes(x = ind, y = values)) + 
+        geom_boxplot() +
+        stat_summary(fun.y = mean, geom = "point", shape = 23, size = 4) +
+        ggtitle("Validation Data")
+val_plot
+```
+From the boxplot, it is apparent that there is much better within group precision than between group precision.
+
+##Explore the data##
+###Shapiro-Wilk Normality Test###
+```{r}
+with(val_data2, tapply(values, ind, shapiro.test))
+```
+
+###Levene's test for Variance###
+```{r, warning=FALSE}
+levene.test(values~ind, data = val_data2)
+```
+###Interpretation###
+The variance is good as seen by both the boxplot and Levene's Test.
+Not all groups pass the Shapiro-Wilk normality test but they only have three data points.
+Ultimately we are wanting to measure the variances, not assess them, so the discrepencies are minor.
+
+##Run ANOVA##
+
+```{r}
+val_aov <- aov(val_data2$values~val_data2$ind)
+summary(val_aov)
+```
+The ANOVA confirms the boxplot assessment.
+
+##Extract the Repeatability and Reproducibility standard deviations##
+
+```{r}
+mean.sqr <- summary(val_aov)[1][[1]][[3]]
+ncount <- as.numeric(length(val_aov$effects))/as.numeric(length(val_aov$coefficients))
+sdr <- sqrt(mean.sqr[2])
+interim <- sqrt((mean.sqr[1]-mean.sqr[2])/ncount)
+sdR <- sqrt(sdr^2 + interim^2)
+paste("Repeatability sd = ", round(sdr,2))
+paste("Reproducibility sd = ",round(sdR,2))
+```
+You will only approach the dummy data's seed values (2 & 5) by repeated analysis.
+
+## Two Way ANOVA##
+
+In two way ANOVA there are three hypotheses of interest as listed below
+
+    H0: There is an effect of the first factor on the dependent continuous variable (main effect)
+    H0: There is an effect of the second factor variable on the dependent continuous variable (main effect)
+    H0: There is a combined effect of the first and second factor variable on the continuous dependent variable (interaction)
+
+The above hypotheses can be extended from two factor variables to N factor variables.
+
+For results of two way ANOVA to be valid there are several assumptions that need to be satisfied. They are listed below.
+
+    Observations must be independent within and across groups
+    Observations are approximately normally distributed.
+    There is equal variance in the observations
+    We should not have any outliers especially when our design is unbalanced
+    The errors are independent
+    
+This example uses a moth trap experiment.  The dependent variable is the number of moths in a trap. The independent variables are location and type of lure. There were four locations (top, middle, lower and ground). There were three types of lure (scent, sugar and chemical).
+
+### Data ###
+```{r}
+moth.experiment <- read.csv("/Users/Study Old/Desktop/Statistics Notebooks/data/moth-trap-experiment.csv", header=TRUE, as.is=TRUE)
+str(moth.experiment)
+```
+
+### Check for balanced data ###
+```{r}
+table(moth.experiment$location, moth.experiment$type.of.lure)
+```
+We have equal observations, so the design is balanced.
+
+### Summary Statistics by location ###
+
+```{r}
+describeBy(moth.experiment$number.of.moths,moth.experiment$location)
+```
+
+### Summary Statistics by lure ###
+```{r}
+describeBy(moth.experiment$number.of.moths,moth.experiment$type.of.lure)
+```
+
+### Create Boxplots ###
+
+```{r}
+ggplot(moth.experiment, aes(x = location, y= number.of.moths, fill = type.of.lure)) +
+        geom_boxplot()
+```
+
+### Check for Normality ###
+
+```{r}
+shapiro.test(moth.experiment$number.of.moths)
+```
+This indicates that the data is NOT normally distributed.
+
+###Try a log transformation###
+
+```{r}
+no.of.moth.log = log(moth.experiment$number.of.moths)
+moth.experiment$no.of.moth.log  = no.of.moth.log
+shapiro.test(moth.experiment$no.of.moth.log)
+```
+Mmmm...not very useful.
+
+### Check for equality of variances ###
+
+```{r}
+leveneTest(moth.experiment$number.of.moths~moth.experiment$location*moth.experiment$type.of.lure)
+```
+This indicates that the variance is equivalent across the groups.
+
+### Power of the Test ###
+
+Our design has 2 factors with 3 and 4 levels, 
+we have 5 observations in each group, 
+our df for the mean squared term is 4*3(5-1)=48
+We choose a medium effect size of 0.25
+
+```{r}
+pwr.f2.test(u=2, v=48, f2=(0.25*0.25))
+```
+
+### Atleast!  Perform ANOVA ###
+
+```{r}
+moth.anova = aov(moth.experiment$no.of.moth.log~moth.experiment$location*moth.experiment$type.of.lure)
+summary(moth.anova)
+```
+Location has an effect on number of moths
+Type of lure does not have an effect on number of moths
+The combined effect of location and type of lure does not have an effect on number of moths
+
+When you have an unbalanced design R does not issue any warnings
+to correctly analyze an unbalanced design we can use the Anova function in car library
+we pass results of aov function and specify we would like to use Type III sums of squares
+
+
+```{r}
+Anova(moth.anova,type = "III")
+```
+###check for homogeneity of residuals###
+
+```{r}
+plot(moth.anova,1)
+```
+
+Homogeneity assumption is not violated but points 47 and 32 are marked as outliers.
+Remember our data still had some non normality
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

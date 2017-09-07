@@ -1,0 +1,81 @@
+---
+title: "The TOST Equivalence test"
+output: html_notebook
+---
+
+##Purpose##
+The TOST test is used to determine if two data sets are equavalent.  It is more informative than a straight t-test.
+
+TOST is an abbreviation for "Two One-Sided t-Tests".
+
+##Theory##
+The Two One-Sided Test uses two t-tests assuming equal variances with a hypothesized mean difference (u1-u2 = interval).
+
+This method allows to determine if the two sample groups are practically equivalent based on a hypothesized difference. Based
+on the value of the hypothesized difference, the program performs a one sided t-test on both ends of the threshold, and if the p-values
+comes up as less than alpha for both the tests, we can conclude that the two samples are equivalent at the required confidence level, based on the hypothesized mean.
+
+Unlike classical hypothesis testing, equivalence tests are used to validate the fact that a difference is in a given interval.
+
+A normal two sample test does not allow the user to make the determination that the two samples are equivalent. One can only fail
+to reject the null hypothesis, and can never accept the null hypothesis.
+
+##Assumptions##
+1. Normally distributed data. (Shapiro-Wilk Test)
+2. Equal variance. (Levene's Test)
+
+
+##Running the Test##
+
+###Packages Used###
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(equivalence)
+library(readxl)
+```
+
+###Data input - unpaired data###
+```{r}
+tost.in <- read_excel("/Users/Study Old/Desktop/Statistics Notebooks/data/demo-tost.xlsx")
+tost.in2 <- na.omit(stack(tost.in))
+```
+
+###Boxplot###
+```{r}
+tost_plot <- ggplot(tost.in2, aes(x=ind, y=values)) +
+        geom_boxplot() +
+        stat_summary(fun.y = mean, geom = "point", shape=23, size=4)
+tost_plot
+```
+###Interpretation###
+Reasonable appearance.  Mean and median in agreement = little skew.  Boxes of similar size so similar variance.
+If in doubt use Shapiro-Wilk Test to test normality and Levene's Test to test variance.
+
+
+###TOST Test###
+
+With the TOST test, the Null Hypothesis, Ho, is that the two sets are different.  In a normal t-test, the null hypothesis is that the two means are the same.
+
+We must set an acceptable difference that we can tolerate before we believe the samples are different.  In this case we have set the difference, epsilon, to 4.  The Ho then becomes that the difference is no more than 4, with a 95% CI.
+
+```{r}
+tost_result <- tost(tost.in$White_Wine, tost.in$Red_Wine, paired = FALSE, epsilon = 4)
+tost_result
+```
+
+##Interpretation##
+The Null Hypothesis is not rejected (p=0.537) so there is not enough data to say that the two sets are not different when the tolerated difference is 4.  The 95% CI for the difference between the two means is -16.5 to 7.2.  
+
+##Acceptable Difference (Epsilon)##
+We used 4 but what would an acceptable difference be, based on the variances in the data? (reference?)
+
+
+
+
+
+
+
+
+
+
+
