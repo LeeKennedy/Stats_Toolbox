@@ -3,18 +3,10 @@ rm(list=ls())
 
 # Packages ---------------------------------------------------------------
 library(tidyverse)
+library(LK.Toolbox)
 library(readxl)
 
 # Functions --------------------------------------------------------------
-
-remove_outliers <- function(x, na.rm = TRUE, ...) {
- qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
-  H <- 1.5 * IQR(x, na.rm = na.rm)
- y <- x
- y[x < (qnt[1] - H)] <- NA
- y[x > (qnt[2] + H)] <- NA
- y
-}
 
 cohens_d <- function(x, y) {
         lx <- length(x)- 1
@@ -30,18 +22,18 @@ cohens_d <- function(x, y) {
 
 # Data Input -------------------------------------------------------------
 
-data.in <- read.csv("vitamind.csv", header=TRUE)
+data.in <- read_excel("data/Book1.xlsx")
 
 # Data Cleaning ----------------------------------------------------------
 
-data.in <- data.in[1:15,]
+data.in <- data.in[16:30,]
 
 t1 <- data.in$A
 t2 <- data.in$B
 
 
 boxplot(t1, t2)
-summary(data.in)
+summary(data.in[,2:3])
 
 t.test(t2, t1, paired = TRUE)
 

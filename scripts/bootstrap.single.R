@@ -1,4 +1,22 @@
-data.in <- read.csv("data/Book1.csv", as.is=TRUE, header=TRUE)
+#### Clean Up environment -----------------------------
+rm(list=ls())
+
+#### Packages -----------------------------
+
+library(readxl)
+library(tidyverse)
+library(LK.Toolbox)
+library(psych)
+library(here)
+
+#### Functions -----------------------------
+
+
+#### Data Input -----------------------------
+
+here::here()
+
+data.in <- read_excel("data/Book1.xlsx")
 
 data.in$A <- as.numeric(data.in$A)
 
@@ -10,14 +28,9 @@ for(i in 1:10000){
   bucket[i] = mean(samp)
 }
 
-hist(bucket, breaks = 20)
-
+hist(bucket, breaks = 40)
 
 summary(bucket)
-library("psych")
-describe(bucket)
-describe(data.in$A)
+describe(bucket, skew = FALSE)
 
-sd(bucket)*sqrt(200)
-sd(data.in$A)
 

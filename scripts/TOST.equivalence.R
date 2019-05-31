@@ -1,12 +1,21 @@
-data.in <- read.csv("Test_equiv.csv", as.is=TRUE, header=TRUE)
-library(equivalence)
+#### Clean Up environment -----------------------------
+rm(list=ls())
 
-options(warn=-1)  # to turn on warnings use options(warn=0)
+#### Packages -----------------------------
+
+library(readxl)
+library(tidyverse)
+library(LK.Toolbox)
+library(equivalence)
+library(here)
+
+#### Data Input -----------------------------
+
+here::here()
+
+data.in <- read_excel("data/Test_equiv.xlsx")
 
 boxplot(data.in)
-
-Col1 <- colnames(data.in)
-colnames(data.in) <- c("A", "B")
 
 sdA <- sd(data.in$A, na.rm=TRUE)
 sdB <- sd(data.in$B, na.rm=TRUE)
@@ -18,6 +27,7 @@ sdpooled <- sqrt(((nA-1)*sdA^2+(nB-1)*sdB^2)/(nA+nB-2))
 
 #-----------estimating the acceptable maximum difference------------------
 #-----------(reference?)--------------------------------------------------
+
 s_star <- sdB*sqrt((nB-1)/(qchisq(0.99,(nB-1))))
 delta <- 0
 epsiln <- delta + s_star*(2*qt(0.95,(2*nB-2))*sqrt(2/nB))
@@ -46,5 +56,15 @@ plot(SetB, from = ll, to = ul, col = "blue", lwd = 4, add = TRUE)
 abline(v = meanA)
 abline(v = meanB)
 
-#detach("package:equivalence", unload=TRUE)
+#### ggplot version -----------------------------
 
+tost_plot <- ggplot(data.frame(x = c(ll, ul), y = myYLim), aes(x = x)) +
+        stat_function(fun = dnorm)
+tost_plot
+#### Data Cleaning -----------------------------
+
+
+#### Visualising Data -----------------------------
+p9 <- ggplot(data.frame(x = c(-4, 4)), aes(x = x)) +
+        stat_function(fun = dnorm)
+p9
