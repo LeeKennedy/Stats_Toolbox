@@ -16,16 +16,17 @@ library(here)
 
 here::here()
 
-data.in <- read_excel("data/Book1.xlsx")
+data.in <- read_excel("Desktop/Book1.xlsx", 
+                      sheet = "Sheet1")
 
-data.in$A <- as.numeric(data.in$A)
+data.in$A <- as.numeric(data.in$Data)
 
 bucket <- rep(NA,10000)
 n <- nrow(data.in)
 
 for(i in 1:10000){
   samp = sample(data.in$A, n, replace=TRUE)
-  bucket[i] = mean(samp)
+  bucket[i] = sd(samp)
 }
 
 hist(bucket, breaks = 40)
@@ -33,4 +34,5 @@ hist(bucket, breaks = 40)
 summary(bucket)
 describe(bucket, skew = FALSE)
 
+describe(data.in$A, skew = FALSE)
 
